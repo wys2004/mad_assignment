@@ -1,108 +1,165 @@
 import 'package:flutter/material.dart';
+import 'Charity.dart';
+import 'AboutUs.dart';
+import 'payment.dart';
+import 'profile.dart';
 
-void main() {
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  // This widget is the root of your application.
+class HomePage extends StatefulWidget {
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
-  }
+  _HomePageState createState() => _HomePageState();
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+class _HomePageState extends State<HomePage> {
+  int _selectedIndex = 1; // Default to Home
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
+  final List<Widget> _pages = [
+    Charity(),
+    HomeContent(), // Main content with images
+    AboutUs(),
+  ];
 
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
+  void _onItemTapped(int index) {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      _selectedIndex = index;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+      body: _pages[_selectedIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
+        selectedItemColor: Colors.blue,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.favorite), label: 'Charity'),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.info), label: 'About Us'),
+        ],
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
+
+// -----------------------------
+// HOME PAGE MAIN CONTENT
+// -----------------------------
+void main() {
+  runApp(MaterialApp(
+    debugShowCheckedModeBanner: false,
+    home: HomePage(), // Your main screen with nav and images
+  ));
+}
+
+
+
+class DonationItem {
+  final String imagePath;
+  final double goalAmount;
+  double donatedAmount;
+
+  DonationItem({
+    required this.imagePath,
+    required this.goalAmount,
+    required this.donatedAmount,
+  });
+
+  double get progress => (donatedAmount / goalAmount).clamp(0.0, 1.0);
+}
+
+class HomeContent extends StatefulWidget {
+  @override
+  _HomeContentState createState() => _HomeContentState();
+}
+
+class _HomeContentState extends State<HomeContent> {
+  List<DonationItem> donations = [
+    DonationItem(imagePath: 'assets/images/charity.png', goalAmount: 1000.0, donatedAmount: 0),
+    DonationItem(imagePath: 'assets/images/charity1.png', goalAmount: 3000.0, donatedAmount: 0),
+    DonationItem(imagePath: 'assets/images/charity2.png', goalAmount: 1500.0, donatedAmount: 0),
+    DonationItem(imagePath: 'assets/images/charity4.png', goalAmount: 500.0, donatedAmount: 0),
+  ];
+
+  Future<void> _navigateToPayment(int index) async {
+    final result = await Navigator.push<double>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PaymentPage(
+          currentAmount: donations[index].donatedAmount,
+          goalAmount: donations[index].goalAmount,
+        ),
+      ),
+    );
+
+    if (result != null) {
+      setState(() {
+        donations[index].donatedAmount = result;
+      });
+    }
+  }
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        // Scrollable content
+        SingleChildScrollView(
+          padding: EdgeInsets.only(top: 80, left: 16, right: 16, bottom: 20),
+          child: Column(
+            children: List.generate(donations.length, (index) {
+              final item = donations[index];
+              return Column(
+                children: [
+                  GestureDetector(
+                    onTap: () => _navigateToPayment(index),
+                    child: Image.asset(item.imagePath, height: 280, fit: BoxFit.cover),
+                  ),
+                  SizedBox(height: 10),
+                  LinearProgressIndicator(
+                    value: item.progress,
+                    minHeight: 10,
+                    backgroundColor: Colors.grey[300],
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+                  ),
+                  SizedBox(height: 5),
+                  Text(
+                    "${item.donatedAmount.toStringAsFixed(2)} / ${item.goalAmount.toStringAsFixed(2)} RM donated",
+                    style: TextStyle(fontSize: 14),
+                  ),
+                  SizedBox(height: 30),
+                ],
+              );
+            }),
+          ),
+        ),
+
+        // Top bar with back and profile
+        Positioned(
+          top: 0,
+          right: 0,
+          child: Container(
+            color: Colors.white.withOpacity(0.9),
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Profile/Login button
+                IconButton(
+                  icon: Icon(Icons.person),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => ProfilePage()),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+  }
+
+
